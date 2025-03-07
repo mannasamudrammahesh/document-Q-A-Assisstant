@@ -2,7 +2,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 import google.generativeai as genai
 
-# Set your Gemini API Key 
+# Set your Gemini API Key
 GOOGLE_API_KEY = "AIzaSyAe5AkeTyf1rHojxSQ6roTgQYUTTu9Ykw4"  # Replace with your actual Google API key
 genai.configure(api_key=GOOGLE_API_KEY)
 
@@ -12,16 +12,16 @@ if 'chat_history' not in st.session_state:
 
 # Streamlit page configuration
 st.set_page_config(
-    page_title="Document Q&A Assisstant",
+    page_title="Document Q&A Assistant",
     page_icon="📄",
     layout="wide"
 )
 
-# Custom CSS for styling
+# Custom CSS for styling (unchanged)
 st.markdown("""
     <style>
     .stButton>button {
-        background-color: #2E4053;  /* More professional dark blue color */
+        background-color: #2E4053;
         color: white;
         padding: 0.4rem 1rem;
         border-radius: 6px;
@@ -35,7 +35,6 @@ st.markdown("""
         background-color: #2E4053;
         color: white;
     }
-    /* Center the file uploader */
     [data-testid="stFileUploader"] {
         width: 60%;
         margin: 0 auto;
@@ -79,7 +78,6 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    /* Center align the title */
     h1 {
         text-align: center;
         color: #2E4053;
@@ -88,7 +86,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Sidebar
+# Sidebar (unchanged)
 st.sidebar.title("📄 Document Q&A App")
 st.sidebar.info("Upload a document and ask questions based on its content.")
 st.sidebar.markdown("### 📝 Chat History")
@@ -106,8 +104,20 @@ if st.session_state.chat_history:
 st.sidebar.markdown("---")
 st.sidebar.write("Created with ❤️ using Streamlit by MuniMahesh.")
 
+# Function to list available models (for debugging)
+def list_available_models():
+    try:
+        models = genai.list_models()
+        available_models = [m.name for m in models if "generateContent" in m.supported_generation_methods]
+        st.sidebar.markdown("### Available Models")
+        st.sidebar.write(available_models)
+        return available_models
+    except Exception as e:
+        st.error(f"Error listing models: {str(e)}")
+        return []
+
 # Main Content
-st.title("Document Q&A Assisstant")
+st.title("Document Q&A Assistant")
 st.subheader("Upload your document and ask any question!")
 
 # File Uploader
@@ -119,30 +129,36 @@ def extract_text_from_pdf(pdf_file):
         reader = PdfReader(pdf_file)
         text = ""
         for page in reader.pages:
-            text += page.extract_text()
+            extracted = page.extract_text()
+            if extracted:
+                text += extracted
+        if not text:
+            st.warning("No text could be extracted from the PDF.")
         return text
     except Exception as e:
-        st.error("Error reading the PDF file. Ensure it's not password-protected or corrupted.")
+        st.error(f"Error reading the PDF file: {str(e)}. Ensure it's not password-protected or corrupted.")
         return None
 
 def answer_question(question, context):
     """Get answer to a question based on the provided context using Gemini."""
     try:
-        # Initialize Gemini model
-        model = genai.GenerativeModel('gemini-pro')
+        # Use a supported model (e.g., gemini-1.5-pro or gemini-1.5-flash)
+        model = genai.GenerativeModel('gemini-1.5-pro')  # Updated model name
 
         # Construct the prompt
         prompt = f"""Context: {context}\n\nQuestion: {question}\n
         Based on the context provided above, please answer the question. 
-        If the answer cannot be found in the context, please say so."""
+        If the answer cannot be found in the context, please say: 'The answer is not available in the provided document.'"""
 
         # Generate response
         response = model.generate_content(prompt)
-
         return response.text
     except Exception as e:
         st.error(f"Error generating the answer: {str(e)}")
         return None
+
+# List available models in the sidebar for debugging (optional)
+list_available_models()
 
 if uploaded_file:
     # Extract text from uploaded PDF
@@ -153,7 +169,7 @@ if uploaded_file:
         st.success("Text extracted successfully!")
         # Display a preview of the extracted text
         with st.expander("Show Extracted Text (Preview)"):
-            st.text_area("Extracted Document Text", value=document_text, height=300)
+            st.text_area("Extracted Document Text", value=document_text[:1000] + ("..." if len(document_text) > 1000 else ""), height=300)
 
         # Question Input
         st.subheader("Ask a Question")
@@ -162,7 +178,6 @@ if uploaded_file:
         col_q, col_space = st.columns([4, 1])
         
         with col_q:
-            # Using a form to handle Enter key submission
             with st.form(key='question_form'):
                 question = st.text_input("Your question:", label_visibility="collapsed")
                 submit_form = st.form_submit_button("Submit", type="primary")
