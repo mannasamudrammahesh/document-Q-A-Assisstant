@@ -102,19 +102,7 @@ if st.session_state.chat_history:
             st.session_state.selected_qa = (q, a)
 
 st.sidebar.markdown("---")
-st.sidebar.write("Created with ❤️ using Streamlit by MuniMahesh.")
-
-# Function to list available models (for debugging)
-def list_available_models():
-    try:
-        models = genai.list_models()
-        available_models = [m.name for m in models if "generateContent" in m.supported_generation_methods]
-        st.sidebar.markdown("### Available Models")
-        st.sidebar.write(available_models)
-        return available_models
-    except Exception as e:
-        st.error(f"Error listing models: {str(e)}")
-        return []
+st.sidebar.write("Created with ❤️ using Streamlit by Mahesh.")
 
 # Main Content
 st.title("Document Q&A Assistant")
@@ -142,7 +130,7 @@ def extract_text_from_pdf(pdf_file):
 def answer_question(question, context):
     """Get answer to a question based on the provided context using Gemini."""
     try:
-        # Use a supported model (e.g., gemini-1.5-pro or gemini-1.5-flash)
+        # Use a supported model (e.g., gemini-1.5-pro)
         model = genai.GenerativeModel('gemini-1.5-pro')  # Updated model name
 
         # Construct the prompt
@@ -156,9 +144,6 @@ def answer_question(question, context):
     except Exception as e:
         st.error(f"Error generating the answer: {str(e)}")
         return None
-
-# List available models in the sidebar for debugging (optional)
-list_available_models()
 
 if uploaded_file:
     # Extract text from uploaded PDF
